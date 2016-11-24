@@ -30,21 +30,22 @@ namespace Serilog.Sinks.AzureEventHub
     {
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
-        readonly IDictionary<string, string> _customProperties; 
+        readonly Action<EventData, LogEvent> _eventDataAction;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
+        /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         public AzureEventHubSink(
             EventHubClient eventHubClient,
             ITextFormatter formatter,
-            IDictionary<string,string> customProperties)
+            Action<EventData, LogEvent> eventDataAction)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter;
-            _customProperties = customProperties;
+            _eventDataAction = eventDataAction;
         }
 
         /// <summary>
@@ -64,13 +65,7 @@ namespace Serilog.Sinks.AzureEventHub
                 PartitionKey = Guid.NewGuid().ToString()
             };
 
-            if (_customProperties != null)
-            {
-                foreach (var prop in _customProperties)
-                {
-                    eventHubData.Properties.Add(prop.Key, prop.Value);
-                }
-            }
+            _eventDataAction?.Invoke(eventHubData, logEvent);
 
             _eventHubClient.Send(eventHubData);
         }

@@ -30,7 +30,7 @@ namespace Serilog.Sinks.AzureEventHub
     {
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
-        readonly IDictionary<string, string> _customProperties;
+        readonly Action<EventData, LogEvent> _eventDataAction;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -39,12 +39,13 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="formatter">Provides formatting for outputting log data</param>
         /// <param name="batchSizeLimit"></param>
         /// <param name="period"></param>
+        /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
             ITextFormatter formatter,
             int batchSizeLimit,
             TimeSpan period,
-            IDictionary<string, string> customProperties)
+            Action<EventData, LogEvent> eventDataAction)
             : base(batchSizeLimit, period)
         {
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
@@ -55,7 +56,7 @@ namespace Serilog.Sinks.AzureEventHub
 
             _eventHubClient = eventHubClient;
             _formatter = formatter;
-            _customProperties = customProperties;
+            _eventDataAction = eventDataAction;
         }
 
         /// <summary>
@@ -83,13 +84,7 @@ namespace Serilog.Sinks.AzureEventHub
                     PartitionKey = batchPartitionKey
                 };
 
-                if (_customProperties != null)
-                {
-                    foreach (var prop in _customProperties)
-                    {
-                        eventHubData.Properties.Add(prop.Key, prop.Value);
-                    }
-                }
+                _eventDataAction?.Invoke(eventHubData, logEvent);
 
                 batchedEvents.Add(eventHubData);
             }
