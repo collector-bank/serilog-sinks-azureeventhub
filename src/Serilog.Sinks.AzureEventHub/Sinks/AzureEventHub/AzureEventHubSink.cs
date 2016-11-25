@@ -23,6 +23,8 @@ using Serilog.Formatting;
 
 namespace Serilog.Sinks.AzureEventHub
 {
+    using System.Transactions;
+
     /// <summary>
     /// Writes log events to an Azure Event Hub.
     /// </summary>
@@ -67,7 +69,10 @@ namespace Serilog.Sinks.AzureEventHub
 
             _eventDataAction?.Invoke(eventHubData, logEvent);
 
-            _eventHubClient.Send(eventHubData);
+            using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
+            {
+                _eventHubClient.Send(eventHubData);
+            }
         }
     }
 }
