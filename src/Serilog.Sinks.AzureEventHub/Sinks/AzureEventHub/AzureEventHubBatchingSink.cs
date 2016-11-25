@@ -23,6 +23,8 @@ using Serilog.Sinks.PeriodicBatching;
 
 namespace Serilog.Sinks.AzureEventHub
 {
+    using System.Transactions;
+
     /// <summary>
     /// Writes log events to an Azure Event Hub in batches.
     /// </summary>
@@ -89,7 +91,10 @@ namespace Serilog.Sinks.AzureEventHub
                 batchedEvents.Add(eventHubData);
             }
 
-            _eventHubClient.SendBatch(batchedEvents);
+            using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
+            {
+                _eventHubClient.SendBatch(batchedEvents);
+            }
         }
     }
 }
