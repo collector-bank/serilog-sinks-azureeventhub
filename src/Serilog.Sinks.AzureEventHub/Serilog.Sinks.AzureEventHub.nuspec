@@ -2,8 +2,8 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>Serilog.Sinks.AzureEventHub</id>
-    <version>$version$</version>
-    <authors>Ben Gale</authors>
+    <version>1.0.1</version>
+    <authors>Ben Gale, Adam Lith, Mats Iremark </authors>
     <description>Serilog event sink that writes to Azure Event Hubs.</description>
     <language>en-US</language>
     <projectUrl>http://serilog.net</projectUrl>
@@ -11,7 +11,7 @@
     <iconUrl>http://serilog.net/images/serilog-sink-nuget.png</iconUrl>
     <tags>serilog logging azure</tags>
     <dependencies>
-      <dependency id="Serilog" version="2.3.0" />
+      <dependency id="Serilog" version="2.0.0" />
       <dependency id="WindowsAzure.ServiceBus" version="3.4.0" />
     </dependencies>
   </metadata>
