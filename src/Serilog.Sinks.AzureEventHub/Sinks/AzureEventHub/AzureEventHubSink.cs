@@ -46,7 +46,7 @@ namespace Serilog.Sinks.AzureEventHub
             Action<EventData, LogEvent> eventDataAction = null)
         {
             _eventHubClient = eventHubClient;
-            _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter();
+            _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
             _eventDataAction = eventDataAction;
         }
 
