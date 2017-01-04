@@ -70,6 +70,7 @@
     <Compile Include="..\..\assets\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="Formatting\ScalarValueTypeSuffixJsonFormatter.cs" />
     <Compile Include="LoggerConfigurationAzureEventHubExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sinks\AzureEventHub\AzureEventHubBatchingSink.cs" />

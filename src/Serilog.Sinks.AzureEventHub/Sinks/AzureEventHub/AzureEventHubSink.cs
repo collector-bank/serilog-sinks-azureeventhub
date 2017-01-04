@@ -42,11 +42,11 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         public AzureEventHubSink(
             EventHubClient eventHubClient,
-            ITextFormatter formatter,
-            Action<EventData, LogEvent> eventDataAction)
+            ITextFormatter formatter = null,
+            Action<EventData, LogEvent> eventDataAction = null)
         {
             _eventHubClient = eventHubClient;
-            _formatter = formatter;
+            _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter();
             _eventDataAction = eventDataAction;
         }
 
