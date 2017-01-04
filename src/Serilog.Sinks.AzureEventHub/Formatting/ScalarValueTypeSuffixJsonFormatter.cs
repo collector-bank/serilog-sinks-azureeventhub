@@ -16,7 +16,9 @@ namespace Serilog.Formatting
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.IO;
+    using System.Linq;
 
     using Serilog.Events;
     using Serilog.Formatting.Json;
@@ -59,17 +61,32 @@ namespace Serilog.Formatting
 
         protected override void WriteJsonProperty(string name, object value, ref string precedingDelimiter, TextWriter output)
         {
+            base.WriteJsonProperty(name + GetSuffix(value), value, ref precedingDelimiter, output);
+        }
+
+        protected override void WriteDictionary(IReadOnlyDictionary<ScalarValue, LogEventPropertyValue> elements, TextWriter output)
+        {
+            var dictionary = elements.ToDictionary(
+                pair => new ScalarValue(pair.Key.Value + GetSuffix(pair.Value)),
+                pair => pair.Value);
+
+            var readOnlyDictionary = new ReadOnlyDictionary<ScalarValue, LogEventPropertyValue>(dictionary);
+
+            base.WriteDictionary(readOnlyDictionary, output);
+        }
+
+        private string GetSuffix(object value)
+        {
             var scalarValue = value as ScalarValue;
 
             if (scalarValue != null)
             {
-                if (_suffixes.ContainsKey(scalarValue.Value.GetType()))
-                    name += _suffixes[scalarValue.Value.GetType()];
-                else
-                    name += _suffixes[typeof(string)];
+                if (scalarValue.Value != null && _suffixes.ContainsKey(scalarValue.Value.GetType()))
+                    return _suffixes[scalarValue.Value.GetType()];
+                return _suffixes[typeof(string)];
             }
 
-            base.WriteJsonProperty(name, value, ref precedingDelimiter, output);
+            return string.Empty;
         }
     }
 }
