@@ -61,18 +61,23 @@ namespace Serilog.Formatting
 
         protected override void WriteJsonProperty(string name, object value, ref string precedingDelimiter, TextWriter output)
         {
-            base.WriteJsonProperty(name + GetSuffix(value), value, ref precedingDelimiter, output);
+            base.WriteJsonProperty(DotEscapeFieldName(name + GetSuffix(value)), value, ref precedingDelimiter, output);
         }
 
         protected override void WriteDictionary(IReadOnlyDictionary<ScalarValue, LogEventPropertyValue> elements, TextWriter output)
         {
             var dictionary = elements.ToDictionary(
-                pair => new ScalarValue(pair.Key.Value + GetSuffix(pair.Value)),
+                pair => new ScalarValue(DotEscapeFieldName(pair.Key.Value + GetSuffix(pair.Value))),
                 pair => pair.Value);
 
             var readOnlyDictionary = new ReadOnlyDictionary<ScalarValue, LogEventPropertyValue>(dictionary);
 
             base.WriteDictionary(readOnlyDictionary, output);
+        }
+
+        protected virtual string DotEscapeFieldName(string value)
+        {
+            return value?.Replace('.', '/');
         }
 
         private string GetSuffix(object value)
