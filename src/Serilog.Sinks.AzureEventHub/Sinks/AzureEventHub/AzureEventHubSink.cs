@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Microsoft.ServiceBus.Messaging;
@@ -33,6 +32,7 @@ namespace Serilog.Sinks.AzureEventHub
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
         readonly Action<EventData, LogEvent> _eventDataAction;
+        readonly int? _compressionTreshold;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -40,14 +40,17 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
+        /// <param name="compressionTreshold">An optional setting to configure when to start compressing messages with gzip. Specified in bytes</param>
         public AzureEventHubSink(
             EventHubClient eventHubClient,
             ITextFormatter formatter = null,
-            Action<EventData, LogEvent> eventDataAction = null)
+            Action<EventData, LogEvent> eventDataAction = null,
+            int? compressionTreshold = null)
         {
             _eventHubClient = eventHubClient;
             _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
             _eventDataAction = eventDataAction;
+            _compressionTreshold = compressionTreshold;
         }
 
         /// <summary>
@@ -62,10 +65,14 @@ namespace Serilog.Sinks.AzureEventHub
                 _formatter.Format(logEvent, render);
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
+
             var eventHubData = new EventData(body)
             {
                 PartitionKey = Guid.NewGuid().ToString()
             };
+
+            if (_compressionTreshold != null && eventHubData.SerializedSizeInBytes > _compressionTreshold)
+                eventHubData = eventHubData.AsCompressed();
 
             _eventDataAction?.Invoke(eventHubData, logEvent);
 
