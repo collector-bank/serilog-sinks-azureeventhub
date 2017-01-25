@@ -71,10 +71,10 @@ namespace Serilog.Sinks.AzureEventHub
                 PartitionKey = Guid.NewGuid().ToString()
             };
 
+            _eventDataAction?.Invoke(eventHubData, logEvent);
+
             if (_compressionTreshold != null && eventHubData.SerializedSizeInBytes > _compressionTreshold)
                 eventHubData = eventHubData.AsCompressed();
-
-            _eventDataAction?.Invoke(eventHubData, logEvent);
 
             using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
             {
