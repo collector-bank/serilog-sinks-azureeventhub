@@ -43,6 +43,9 @@ namespace Serilog
                 PartitionKey = Guid.NewGuid().ToString()
             };
 
+            foreach (var eventDataProperty in eventData.Properties)
+                compressedEventData.Properties.Add(eventDataProperty);
+
             compressedEventData.Properties.Add(CONTENT_ENCODING, GZIP);
             return compressedEventData;
         }
