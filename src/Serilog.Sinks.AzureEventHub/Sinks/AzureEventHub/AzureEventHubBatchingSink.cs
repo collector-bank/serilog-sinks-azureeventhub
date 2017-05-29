@@ -15,8 +15,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.ServiceBus.Messaging;
+using Serilog.Debugging;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.PeriodicBatching;
@@ -30,6 +32,9 @@ namespace Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
+        const int EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES = 256000;
+        const int EVENTHUB_HEADER_SIZE_IN_BYTES = 6000;
+
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
         readonly Action<EventData, LogEvent> _eventDataAction;
@@ -39,21 +44,22 @@ namespace Serilog.Sinks.AzureEventHub
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
-        /// <param name="batchSizeLimit"></param>
-        /// <param name="period"></param>
+        /// <param name="batchSizeLimit">Default is 5 messages at a time</param>
+        /// <param name="period">How often the batching should be done</param>
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
-            ITextFormatter formatter,
-            int batchSizeLimit,
+            Action<EventData, LogEvent> eventDataAction,
             TimeSpan period,
-            Action<EventData, LogEvent> eventDataAction)
+            ITextFormatter formatter = null,
+            int batchSizeLimit = 5)
             : base(batchSizeLimit, period)
         {
+            formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
+
             if (batchSizeLimit < 1 || batchSizeLimit > 100)
             {
-                throw new ArgumentException(
-                    "batchSizeLimit must be between 1 and 100.");
+                throw new ArgumentException("batchSizeLimit must be between 1 and 100.");
             }
 
             _eventHubClient = eventHubClient;
@@ -67,31 +73,94 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="events">The events to emit.</param>
         protected override void EmitBatch(IEnumerable<LogEvent> events)
         {
-            var batchedEvents = new List<EventData>();
-            var batchPartitionKey = Guid.NewGuid().ToString();
+            var batchedEvents = ConvertLogEventsToEventData(events).ToList();
 
-            // Possible optimizations for the below:
-            // 1. Reuse a StringWriter object for the whole batch, or possibly across batches.
-            // 2. Reuse byte[] buffers instead of reallocating every time.
-            foreach (var logEvent in events)
+            var totalSizeOfAllEventsInBytes = batchedEvents.Sum(x => x.SerializedSizeInBytes);
+
+            if (totalSizeOfAllEventsInBytes > GetAllowedMessageSize(events.Count()))
             {
-                byte[] body;
-                using (var render = new StringWriter())
-                {
-                    _formatter.Format(logEvent, render);
-                    body = Encoding.UTF8.GetBytes(render.ToString());
-                }
-                var eventHubData = new EventData(body)
-                {
-                    PartitionKey = batchPartitionKey
-                };
-
-                _eventDataAction?.Invoke(eventHubData, logEvent);
-
-                batchedEvents.Add(eventHubData);
+                SendBatchOneEventAtATime(events);
+                return;
             }
 
-            using (var transaction = new TransactionScope(TransactionScopeOption.Suppress))
+            SendBatchAsOneChunk(batchedEvents);
+        }
+
+        private static int GetAllowedMessageSize(int numberOfEvents)
+        {
+            var headerSize = EVENTHUB_HEADER_SIZE_IN_BYTES * numberOfEvents;
+            return EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES - headerSize;
+        }
+
+        private IEnumerable<EventData> ConvertLogEventsToEventData(IEnumerable<LogEvent> events)
+        {
+            var batchPartitionKey = Guid.NewGuid().ToString();
+
+            foreach (var logEvent in events)
+            {
+                yield return ConvertLogEventToEventData(logEvent, batchPartitionKey);
+            }
+        }
+
+        private EventData ConvertLogEventToEventData(LogEvent logEvent, string batchPartitionKey = null)
+        {
+            if (batchPartitionKey == null)
+                batchPartitionKey = Guid.NewGuid().ToString();
+
+            byte[] body;
+            using (var render = new StringWriter())
+            {
+                _formatter.Format(logEvent, render);
+                body = Encoding.UTF8.GetBytes(render.ToString());
+            }
+
+            var eventHubData = new EventData(body)
+            {
+                PartitionKey = batchPartitionKey
+            };
+
+            eventHubData = eventHubData.AsCompressed();
+
+            _eventDataAction?.Invoke(eventHubData, logEvent);
+            return eventHubData;
+        }
+
+        private void SendBatchOneEventAtATime(IEnumerable<LogEvent> events)
+        {
+            foreach (var logEvent in events)
+            {
+                var eventData = ConvertLogEventToEventData(logEvent);
+
+                if (eventData.SerializedSizeInBytes > GetAllowedMessageSize(1))
+                {
+                    SelfLog.WriteLine("Message too large to send with eventhub");
+                    continue;
+                }
+
+                try
+                {
+                    using (new TransactionScope(TransactionScopeOption.Suppress))
+                    {
+                        _eventHubClient.Send(eventData);
+                    }
+                }
+                catch
+                {
+                    try
+                    {
+                        Emit(logEvent);
+                    }
+                    catch
+                    {
+                        SelfLog.WriteLine("Could not Emit message");
+                    }
+                }
+            }
+        }
+
+        private void SendBatchAsOneChunk(IEnumerable<EventData> batchedEvents)
+        {
+            using (new TransactionScope(TransactionScopeOption.Suppress))
             {
                 _eventHubClient.SendBatch(batchedEvents);
             }
