@@ -40,7 +40,7 @@ namespace Serilog
 
             var compressedEventData = new EventData(newStream)
             {
-                PartitionKey = Guid.NewGuid().ToString()
+                PartitionKey = eventData.PartitionKey
             };
 
             foreach (var eventDataProperty in eventData.Properties)
