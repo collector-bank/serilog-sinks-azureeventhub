@@ -33,6 +33,7 @@ namespace Serilog.Sinks.AzureEventHub
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
         const int EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES = 256000;
+        const int EVENTHUB_HEADER_SIZE_IN_BYTES = 6000;
 
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
@@ -76,13 +77,19 @@ namespace Serilog.Sinks.AzureEventHub
 
             var totalSizeOfAllEventsInBytes = batchedEvents.Sum(x => x.SerializedSizeInBytes);
 
-            if (totalSizeOfAllEventsInBytes > EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES)
+            if (totalSizeOfAllEventsInBytes > GetAllowedMessageSize(events.Count()))
             {
                 SendBatchOneEventAtATime(events);
                 return;
             }
 
             SendBatchAsOneChunk(batchedEvents);
+        }
+
+        private static int GetAllowedMessageSize(int numberOfEvents)
+        {
+            var headerSize = EVENTHUB_HEADER_SIZE_IN_BYTES * numberOfEvents;
+            return EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES - headerSize;
         }
 
         private IEnumerable<EventData> ConvertLogEventsToEventData(IEnumerable<LogEvent> events)
@@ -124,7 +131,7 @@ namespace Serilog.Sinks.AzureEventHub
             {
                 var eventData = ConvertLogEventToEventData(logEvent);
 
-                if (eventData.SerializedSizeInBytes > EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES)
+                if (eventData.SerializedSizeInBytes > GetAllowedMessageSize(1))
                 {
                     SelfLog.WriteLine("Message too large to send with eventhub");
                     continue;
