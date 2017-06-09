@@ -11,16 +11,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Serilog.Sinks.AzureEventHub;
+
+#if NET45
 using Microsoft.ServiceBus.Messaging;
+#else 
+using Microsoft.Azure.EventHubs;
+#endif
+
+
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Formatting;
 using Serilog.Formatting.Display;
-using Serilog.Sinks.AzureEventHub;
 
 namespace Serilog
 {
@@ -47,6 +53,7 @@ namespace Serilog
         /// </summary>
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="eventHubClient">The Event Hub to use to insert the log entries to.</param>
+        /// <param name="applicationName">The name of the application associated with the logs.</param>
         /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
@@ -61,6 +68,7 @@ namespace Serilog
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             EventHubClient eventHubClient,
+            string applicationName,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -71,25 +79,29 @@ namespace Serilog
             )
         {
             if (loggerConfiguration == null) 
-                throw new ArgumentNullException("loggerConfiguration");
+                throw new ArgumentNullException(nameof(loggerConfiguration));
             if (eventHubClient == null)
-                throw new ArgumentNullException("eventHubClient");
+                throw new ArgumentNullException(nameof(eventHubClient));
             if (outputTemplate == null) 
-                throw new ArgumentNullException("outputTemplate");
+                throw new ArgumentNullException(nameof(outputTemplate));
 
-            var formatter = new MessageTemplateTextFormatter(outputTemplate, formatProvider);
+            var formatter = new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
 
-            var sink = writeInBatches ?
-                (ILogEventSink) new AzureEventHubBatchingSink(
+            ILogEventSink sink = writeInBatches ?
+                new AzureEventHubBatchingSink(
                     eventHubClient,
+                    applicationName,
                     eventDataAction,
                     period ?? DefaultPeriod,
                     formatter,
-                    batchPostingLimit ?? DefaultBatchPostingLimit) :
+                    batchPostingLimit ?? DefaultBatchPostingLimit
+                    ) as ILogEventSink :
                 new AzureEventHubSink(
                     eventHubClient,
+                    applicationName,
                     formatter,
-                    eventDataAction);
+                    eventDataAction
+                    );
 
             return loggerConfiguration.Sink(sink, restrictedToMinimumLevel);
         }
@@ -100,7 +112,8 @@ namespace Serilog
         /// <param name="loggerConfiguration">The logger configuration.</param>
         /// <param name="connectionString">The Event Hub connection string.</param>
         /// <param name="eventHubName">The Event Hub name.</param>
-        /// /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
+        /// <param name="applicationName">Enriches every log message with a Type (_type) with this name</param>
+        /// <param name="formatProvider">Supplies culture-specific formatting information, or null.</param>
         /// <param name="outputTemplate">A message template describing the format used to write to the sink.
         /// the default is "{Timestamp} [{Level}] {Message}{NewLine}{Exception}".</param>
         /// <param name="restrictedToMinimumLevel">The minimum log event level required in order to write an event to the sink.</param>
@@ -115,6 +128,7 @@ namespace Serilog
             this LoggerSinkConfiguration loggerConfiguration,
             string connectionString,
             string eventHubName,
+            string applicationName,
             string outputTemplate = DefaultOutputTemplate,
             IFormatProvider formatProvider = null,
             LogEventLevel restrictedToMinimumLevel = LevelAlias.Minimum,
@@ -131,19 +145,25 @@ namespace Serilog
             if (string.IsNullOrWhiteSpace(eventHubName))
                 throw new ArgumentNullException("eventHubName");
 
-            var client = EventHubClient.CreateFromConnectionString(
+            EventHubClient client = null;
+#if NET45
+            client = EventHubClient.CreateFromConnectionString(
                 connectionString, eventHubName);
-
+#else
+            client = EventHubClient.CreateFromConnectionString(connectionString + ";EntityPath=" + eventHubName);
+#endif
             return AzureEventHub(
                 loggerConfiguration,
                 client,
+                applicationName,
                 outputTemplate,
                 formatProvider,
                 restrictedToMinimumLevel,
                 writeInBatches,
                 period,
                 batchPostingLimit,
-                eventDataAction);
+                eventDataAction
+                );
         }
     }
 }

@@ -17,15 +17,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Microsoft.ServiceBus.Messaging;
 using Serilog.Debugging;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.PeriodicBatching;
 
+#if NET45
+using Microsoft.ServiceBus.Messaging;
+#else
+using Microsoft.Azure.EventHubs;
+#endif
+
 namespace Serilog.Sinks.AzureEventHub
 {
+#if NET45
     using System.Transactions;
+#endif
 
     /// <summary>
     /// Writes log events to an Azure Event Hub in batches.
@@ -37,22 +44,26 @@ namespace Serilog.Sinks.AzureEventHub
 
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
+        private readonly string _applicationName;
         readonly Action<EventData, LogEvent> _eventDataAction;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
+        /// <param name="applicationName">The name of the application associated with the logs.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         /// <param name="batchSizeLimit">Default is 5 messages at a time</param>
         /// <param name="period">How often the batching should be done</param>
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
+            string applicationName,
             Action<EventData, LogEvent> eventDataAction,
             TimeSpan period,
             ITextFormatter formatter = null,
-            int batchSizeLimit = 5)
+            int batchSizeLimit = 5
+            )
             : base(batchSizeLimit, period)
         {
             formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
@@ -64,6 +75,7 @@ namespace Serilog.Sinks.AzureEventHub
 
             _eventHubClient = eventHubClient;
             _formatter = formatter;
+            _applicationName = applicationName;
             _eventDataAction = eventDataAction;
         }
 
@@ -73,16 +85,18 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="events">The events to emit.</param>
         protected override void EmitBatch(IEnumerable<LogEvent> events)
         {
-            var batchedEvents = ConvertLogEventsToEventData(events).ToList();
+            var logEvents = events as LogEvent[] ?? events.ToArray();
+            var batchedEvents = ConvertLogEventsToEventData(logEvents).ToList();
 
+#if NET45
             var totalSizeOfAllEventsInBytes = batchedEvents.Sum(x => x.SerializedSizeInBytes);
 
-            if (totalSizeOfAllEventsInBytes > GetAllowedMessageSize(events.Count()))
+            if (totalSizeOfAllEventsInBytes > GetAllowedMessageSize(batchedEvents.Count))
             {
-                SendBatchOneEventAtATime(events);
+                SendBatchOneEventAtATime(logEvents);
                 return;
             }
-
+#endif
             SendBatchAsOneChunk(batchedEvents);
         }
 
@@ -116,10 +130,16 @@ namespace Serilog.Sinks.AzureEventHub
 
             var eventHubData = new EventData(body)
             {
+#if NET45
                 PartitionKey = batchPartitionKey
+#endif
             };
 
             eventHubData = eventHubData.AsCompressed();
+            if (!string.IsNullOrWhiteSpace(_applicationName) && !eventHubData.Properties.ContainsKey("Type"))
+            {
+                eventHubData.Properties.Add("Type", _applicationName);
+            }
 
             _eventDataAction?.Invoke(eventHubData, logEvent);
             return eventHubData;
@@ -131,18 +151,23 @@ namespace Serilog.Sinks.AzureEventHub
             {
                 var eventData = ConvertLogEventToEventData(logEvent);
 
+#if NET45
                 if (eventData.SerializedSizeInBytes > GetAllowedMessageSize(1))
                 {
                     SelfLog.WriteLine("Message too large to send with eventhub");
                     continue;
                 }
+#endif
 
                 try
                 {
+#if NET45
                     using (new TransactionScope(TransactionScopeOption.Suppress))
                     {
                         _eventHubClient.Send(eventData);
                     }
+#endif
+                    _eventHubClient.SendAsync(eventData).Wait();
                 }
                 catch
                 {
@@ -160,10 +185,14 @@ namespace Serilog.Sinks.AzureEventHub
 
         private void SendBatchAsOneChunk(IEnumerable<EventData> batchedEvents)
         {
+#if NET45
             using (new TransactionScope(TransactionScopeOption.Suppress))
             {
                 _eventHubClient.SendBatch(batchedEvents);
             }
+#else
+            _eventHubClient.SendAsync(batchedEvents).Wait();
+#endif
         }
     }
 }

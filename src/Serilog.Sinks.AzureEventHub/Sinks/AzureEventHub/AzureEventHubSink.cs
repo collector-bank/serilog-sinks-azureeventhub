@@ -15,42 +15,62 @@
 using System;
 using System.IO;
 using System.Text;
-using Microsoft.ServiceBus.Messaging;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
 
+#if NET45
+using Microsoft.ServiceBus.Messaging;
+#else
+using Microsoft.Azure.EventHubs;
+#endif
+
 namespace Serilog.Sinks.AzureEventHub
 {
+#if NET45
     using System.Transactions;
+#endif
 
     /// <summary>
     /// Writes log events to an Azure Event Hub.
     /// </summary>
     public class AzureEventHubSink : ILogEventSink
     {
-        readonly EventHubClient _eventHubClient;
-        readonly ITextFormatter _formatter;
-        readonly Action<EventData, LogEvent> _eventDataAction;
-        readonly int? _compressionTreshold;
+        private readonly EventHubClient _eventHubClient;
+        private readonly string _applicationName;
+        private readonly ITextFormatter _formatter;
+        private readonly Action<EventData, LogEvent> _eventDataAction;
+#if NET45
+        private readonly int? _compressionTreshold;
+#endif
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
+        /// <param name="applicationName">The name of the application associated with the logs.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
+#if NET45
         /// <param name="compressionTreshold">An optional setting to configure when to start compressing messages with gzip. Specified in bytes</param>
+#endif
         public AzureEventHubSink(
             EventHubClient eventHubClient,
+            string applicationName,
             ITextFormatter formatter = null,
-            Action<EventData, LogEvent> eventDataAction = null,
-            int? compressionTreshold = null)
+            Action<EventData, LogEvent> eventDataAction = null
+#if NET45
+            ,int? compressionTreshold = null
+#endif
+            )
         {
             _eventHubClient = eventHubClient;
+            _applicationName = applicationName;
             _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
             _eventDataAction = eventDataAction;
+#if NET45
             _compressionTreshold = compressionTreshold;
+#endif
         }
 
         /// <summary>
@@ -68,10 +88,17 @@ namespace Serilog.Sinks.AzureEventHub
 
             var eventHubData = new EventData(body)
             {
+#if NET45
                 PartitionKey = Guid.NewGuid().ToString()
+#endif
             };
-
             _eventDataAction?.Invoke(eventHubData, logEvent);
+            if (!string.IsNullOrWhiteSpace(_applicationName) && !eventHubData.Properties.ContainsKey("Type"))
+            {
+                eventHubData.Properties.Add("Type", _applicationName);
+            }
+
+#if NET45
 
             if (_compressionTreshold != null && eventHubData.SerializedSizeInBytes > _compressionTreshold)
                 eventHubData = eventHubData.AsCompressed();
@@ -80,6 +107,9 @@ namespace Serilog.Sinks.AzureEventHub
             {
                 _eventHubClient.Send(eventHubData);
             }
+#else
+            _eventHubClient.SendAsync(eventHubData).Wait();
+#endif
         }
     }
 }

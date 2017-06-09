@@ -16,7 +16,11 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+#if NET45
 using Microsoft.ServiceBus.Messaging;
+#else
+using Microsoft.Azure.EventHubs;
+#endif
 
 namespace Serilog
 {
@@ -28,7 +32,7 @@ namespace Serilog
         public static EventData AsCompressed(this EventData eventData)
         {
             var newStream = new MemoryStream();
-            using (var bodyStream = eventData.GetBodyStream())
+            using (var bodyStream = GetStream(eventData))
             {
                 using (var compressionStream = new GZipStream(newStream, CompressionMode.Compress, true))
                 {
@@ -38,16 +42,25 @@ namespace Serilog
                 newStream.Position = 0;
             }
 
-            var compressedEventData = new EventData(newStream)
-            {
-                PartitionKey = eventData.PartitionKey
-            };
+            var compressedEventData = new EventData(newStream.ToArray());
+#if NET45
+            compressedEventData.PartitionKey = eventData.PartitionKey;
+#endif
 
             foreach (var eventDataProperty in eventData.Properties)
                 compressedEventData.Properties.Add(eventDataProperty);
 
             compressedEventData.Properties.Add(CONTENT_ENCODING, GZIP);
             return compressedEventData;
+        }
+
+        private static Stream GetStream(EventData eventData)
+        {
+#if NET45
+            return eventData.GetBodyStream();
+#else
+            return new MemoryStream(eventData.Body.Array);
+#endif
         }
 
         public static void Decompress(this EventData eventData)
