@@ -2,9 +2,9 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>CollectorBank.Serilog.Sinks.AzureEventHub</id>
-    <version>4.0.0</version>
+    <version>4.0.1</version>
     <authors>Ben Gale, Adam Lith, Mats Iremark, Martin Almström </authors>
-    <description>Serilog event sink that writes to Azure Event Hubs.</description>
+    <description>Obsolete. Use Collector.Serilog.Sinks.AzureEventHub instead.</description>
     <language>en-US</language>
     <projectUrl>http://serilog.net</projectUrl>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
