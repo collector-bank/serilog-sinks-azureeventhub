@@ -37,6 +37,7 @@ namespace Serilog.Sinks.AzureEventHub
     /// <summary>
     /// Writes log events to an Azure Event Hub in batches.
     /// </summary>
+    [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
         const int EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES = 256000;
@@ -56,6 +57,7 @@ namespace Serilog.Sinks.AzureEventHub
         /// <param name="batchSizeLimit">Default is 5 messages at a time</param>
         /// <param name="period">How often the batching should be done</param>
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
+        [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
             string applicationName,

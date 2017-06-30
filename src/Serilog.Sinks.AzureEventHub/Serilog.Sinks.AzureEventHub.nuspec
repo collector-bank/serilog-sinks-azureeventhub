@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>CollectorBank.Serilog.Sinks.AzureEventHub</id>
-    <version>3.0.0</version>
+    <version>4.0.0</version>
     <authors>Ben Gale, Adam Lith, Mats Iremark, Martin Almström </authors>
     <description>Serilog event sink that writes to Azure Event Hubs.</description>
     <language>en-US</language>

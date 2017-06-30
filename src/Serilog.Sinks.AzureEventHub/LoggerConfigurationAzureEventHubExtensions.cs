@@ -34,6 +34,7 @@ namespace Serilog
     /// Adds the WriteTo.AzureEventHub() extension metho to <see cref="LoggerConfiguration"/>.
     /// </summary>
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+    [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
     public static class LoggerConfigurationAzureEventHubExtensions
     {
         const string DefaultOutputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {Message}{NewLine}{Exception}";
@@ -65,6 +66,7 @@ namespace Serilog
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             EventHubClient eventHubClient,
@@ -124,6 +126,7 @@ namespace Serilog
         /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         /// <returns>Logger configuration, allowing configuration to continue.</returns>
         /// <exception cref="ArgumentNullException">A required parameter is null.</exception>
+        [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
         public static LoggerConfiguration AzureEventHub(
             this LoggerSinkConfiguration loggerConfiguration,
             string connectionString,

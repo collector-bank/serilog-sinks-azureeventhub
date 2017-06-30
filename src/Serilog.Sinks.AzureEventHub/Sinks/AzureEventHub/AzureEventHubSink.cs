@@ -34,6 +34,7 @@ namespace Serilog.Sinks.AzureEventHub
     /// <summary>
     /// Writes log events to an Azure Event Hub.
     /// </summary>
+    [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
     public class AzureEventHubSink : ILogEventSink
     {
         private readonly EventHubClient _eventHubClient;
@@ -54,6 +55,7 @@ namespace Serilog.Sinks.AzureEventHub
 #if NET45
         /// <param name="compressionTreshold">An optional setting to configure when to start compressing messages with gzip. Specified in bytes</param>
 #endif
+        [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
         public AzureEventHubSink(
             EventHubClient eventHubClient,
             string applicationName,

@@ -23,6 +23,7 @@ namespace Serilog.Formatting
     using Serilog.Events;
     using Serilog.Formatting.Json;
 
+    [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
     public class ScalarValueTypeSuffixJsonFormatter : JsonFormatter
     {
         private readonly Dictionary<Type, string> _suffixes = new Dictionary<Type, string>
