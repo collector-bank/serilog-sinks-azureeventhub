@@ -4,14 +4,19 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard16;net45</TargetFrameworks>
     <DebugType>portable</DebugType>
-    <AssemblyName>Serilog.Sinks.AzureEventHub</AssemblyName>
-    <PackageId>Serilog.Sinks.AzureEventHub</PackageId>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <AssemblyName>Collector.Serilog.Sinks.AzureEventHub</AssemblyName>
+    <PackageId>Collector.Serilog.Sinks.AzureEventHub</PackageId>
     <Version>1.0.0</Version>
-    <Description>Serilog sink for Azure Event Hub</Description>
-    <Copyright>Copyright © Serilog Contributors 2017</Copyright>
+    <Description>Serilog sink that writes to Azure Event Hub.</Description>
+    <Copyright>Copyright © 2017</Copyright>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>Team Heimdal</Authors>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
+    <PackageIconUrl>http://serilog.net/images/serilog-sink-nuget.png</PackageIconUrl>
+    <PackageTags>Serilog Logging Azure EventHub</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,9 +31,6 @@
     <Reference Include="System" />
     <Reference Include="System.Transactions" />
     <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <PackageReference Include="WindowsAzure.ServiceBus">
       <Version>4.1.2</Version>
     </PackageReference>

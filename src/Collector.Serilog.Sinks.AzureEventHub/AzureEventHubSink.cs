@@ -1,18 +1,4 @@
-﻿// Copyright 2014 Serilog Contributors
-// 
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-// 
-//     http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-using System;
+﻿using System;
 using System.IO;
 using System.Text;
 using Serilog.Core;
@@ -21,20 +7,16 @@ using Serilog.Formatting;
 
 #if NET45
 using Microsoft.ServiceBus.Messaging;
+using System.Transactions;
 #else
 using Microsoft.Azure.EventHubs;
 #endif
 
-namespace Serilog.Sinks.AzureEventHub
+namespace Collector.Serilog.Sinks.AzureEventHub
 {
-#if NET45
-    using System.Transactions;
-#endif
-
     /// <summary>
     /// Writes log events to an Azure Event Hub.
     /// </summary>
-    [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
     public class AzureEventHubSink : ILogEventSink
     {
         private readonly EventHubClient _eventHubClient;
@@ -55,7 +37,6 @@ namespace Serilog.Sinks.AzureEventHub
 #if NET45
         /// <param name="compressionTreshold">An optional setting to configure when to start compressing messages with gzip. Specified in bytes</param>
 #endif
-        [Obsolete("Use Collector.Serilog.Sinks.AzureEventHub instead")]
         public AzureEventHubSink(
             EventHubClient eventHubClient,
             string applicationName,
@@ -68,7 +49,7 @@ namespace Serilog.Sinks.AzureEventHub
         {
             _eventHubClient = eventHubClient;
             _applicationName = applicationName;
-            _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter(renderMessage: true);
+            _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter();
             _eventDataAction = eventDataAction;
 #if NET45
             _compressionTreshold = compressionTreshold;
