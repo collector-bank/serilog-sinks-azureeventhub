@@ -42,8 +42,8 @@ namespace Collector.Serilog.Sinks.AzureEventHub
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
             string applicationName,
-            Action<EventData, LogEvent> eventDataAction,
             TimeSpan period,
+            Action<EventData, LogEvent> eventDataAction = null,
             ITextFormatter formatter = null,
             int batchSizeLimit = 5
             )
