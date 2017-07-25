@@ -14,8 +14,6 @@ using Microsoft.Azure.EventHubs;
 
 namespace Collector.Serilog.Sinks.AzureEventHub
 {
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Writes log events to an Azure Event Hub.
@@ -70,9 +68,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             using (var render = new StringWriter())
             {
                 _formatter.Format(logEvent, render);
-                var bodyAsString = render.ToString();
-                bodyAsString = AddLogItemIdToJsonString(bodyAsString);
-                body = Encoding.UTF8.GetBytes(bodyAsString);
+                body = Encoding.UTF8.GetBytes(render.ToString());
             }
             
             var eventHubData = new EventData(body)
@@ -87,6 +83,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                 eventHubData.Properties.Add("Type", _applicationName);
             }
 
+            eventHubData.Properties.Add("LogItemId", Guid.NewGuid().ToString());
             
 #if NET45
 
@@ -100,13 +97,6 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 #else
             _eventHubClient.SendAsync(eventHubData).Wait();
 #endif
-        }
-
-        private string AddLogItemIdToJsonString(string json)
-        {
-            var o = JObject.Parse(json);
-            o.Add("LogItemId", Guid.NewGuid().ToString());
-            return o.ToString(Formatting.None);
         }
     }
 }
