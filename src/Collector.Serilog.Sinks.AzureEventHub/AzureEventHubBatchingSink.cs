@@ -124,6 +124,8 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                 eventHubData.Properties.Add("Type", _applicationName);
             }
 
+            eventHubData.Properties.Add("LogItemId", Guid.NewGuid().ToString());
+            
             _eventDataAction?.Invoke(eventHubData, logEvent);
             return eventHubData;
         }

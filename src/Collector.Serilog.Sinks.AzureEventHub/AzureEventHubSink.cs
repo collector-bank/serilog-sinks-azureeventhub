@@ -14,6 +14,7 @@ using Microsoft.Azure.EventHubs;
 
 namespace Collector.Serilog.Sinks.AzureEventHub
 {
+
     /// <summary>
     /// Writes log events to an Azure Event Hub.
     /// </summary>
@@ -63,12 +64,13 @@ namespace Collector.Serilog.Sinks.AzureEventHub
         public void Emit(LogEvent logEvent)
         {
             byte[] body;
+            
             using (var render = new StringWriter())
             {
                 _formatter.Format(logEvent, render);
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
-
+            
             var eventHubData = new EventData(body)
             {
 #if NET45
@@ -81,6 +83,8 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                 eventHubData.Properties.Add("Type", _applicationName);
             }
 
+            eventHubData.Properties.Add("LogItemId", Guid.NewGuid().ToString());
+            
 #if NET45
 
             if (_compressionTreshold != null && eventHubData.SerializedSizeInBytes > _compressionTreshold)
