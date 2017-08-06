@@ -4,7 +4,7 @@
 
 A Serilog sink that writes events to Azure EventHubs
 
-##Usage
+## Usage
 
 ```csharp
 var eventHubClient = EventHubClient.CreateFromConnectionString(eventHubConnectionString, "entityPath");
@@ -12,8 +12,6 @@ var logger = new LoggerConfiguration()
                 .WriteTo.Sink(new AzureEventHubSink(
                     eventHubClient: eventHubClient,
                     formatter: new JsonFormatter()
-                    )
-				...
-				.CreateLogger();
-					
+                ...
+                .CreateLogger();
 ```
