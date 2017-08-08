@@ -38,9 +38,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 #endif
         public AzureEventHubSink(
             EventHubClient eventHubClient,
-            string applicationName,
-            ITextFormatter formatter = null,
-            Action<EventData, LogEvent> eventDataAction = null
+            ITextFormatter formatter = null
 #if NET45
             ,int? compressionTreshold = null
 #endif

@@ -18,6 +18,7 @@
     <RepositoryUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</RepositoryUrl>
     <PackageProjectUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</PackageProjectUrl>
     <PackageReleaseNotes>Removed type and application_name from constructor. Instead of using those, use enrichers to make difference between different logging sources.</PackageReleaseNotes>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Collector.Serilog.Sinks.AzureEventHub.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
