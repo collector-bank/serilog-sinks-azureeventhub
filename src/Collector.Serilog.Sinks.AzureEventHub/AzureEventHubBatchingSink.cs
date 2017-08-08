@@ -32,19 +32,14 @@ namespace Collector.Serilog.Sinks.AzureEventHub
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
-        /// <param name="applicationName">The name of the application associated with the logs.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
         /// <param name="batchSizeLimit">Default is 5 messages at a time</param>
         /// <param name="period">How often the batching should be done</param>
-        /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
         public AzureEventHubBatchingSink(
             EventHubClient eventHubClient,
-            string applicationName,
             TimeSpan period,
-            Action<EventData, LogEvent> eventDataAction = null,
             ITextFormatter formatter = null,
-            int batchSizeLimit = 5
-            )
+            int batchSizeLimit = 5)
             : base(batchSizeLimit, period)
         {
             formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter();
