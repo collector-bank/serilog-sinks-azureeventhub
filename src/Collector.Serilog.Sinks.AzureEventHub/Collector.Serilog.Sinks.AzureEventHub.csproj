@@ -6,7 +6,7 @@
     <DebugType>portable</DebugType>
     <AssemblyName>Collector.Serilog.Sinks.AzureEventHub</AssemblyName>
     <PackageId>Collector.Serilog.Sinks.AzureEventHub</PackageId>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Description>Serilog sink that writes to Azure Event Hub.</Description>
     <Copyright>Copyright © 2017</Copyright>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
