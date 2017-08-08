@@ -21,9 +21,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
     public class AzureEventHubSink : ILogEventSink
     {
         private readonly EventHubClient _eventHubClient;
-        private readonly string _applicationName;
         private readonly ITextFormatter _formatter;
-        private readonly Action<EventData, LogEvent> _eventDataAction;
 #if NET45
         private readonly int? _compressionTreshold;
 #endif
@@ -49,9 +47,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             )
         {
             _eventHubClient = eventHubClient;
-            _applicationName = applicationName;
             _formatter = formatter ?? new ScalarValueTypeSuffixJsonFormatter();
-            _eventDataAction = eventDataAction;
 #if NET45
             _compressionTreshold = compressionTreshold;
 #endif
@@ -77,16 +73,8 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                 PartitionKey = Guid.NewGuid().ToString()
 #endif
             };
-            _eventDataAction?.Invoke(eventHubData, logEvent);
-            if (!string.IsNullOrWhiteSpace(_applicationName) && !eventHubData.Properties.ContainsKey("Type"))
-            {
-                eventHubData.Properties.Add("Type", _applicationName);
-            }
-
             eventHubData.Properties.Add("LogItemId", Guid.NewGuid().ToString());
-            
 #if NET45
-
             if (_compressionTreshold != null && eventHubData.SerializedSizeInBytes > _compressionTreshold)
                 eventHubData = eventHubData.AsCompressed();
 

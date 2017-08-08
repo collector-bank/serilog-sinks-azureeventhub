@@ -27,8 +27,6 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
-        private readonly string _applicationName;
-        readonly Action<EventData, LogEvent> _eventDataAction;
 
         /// <summary>
         /// Construct a sink that saves log events to the specified EventHubClient.
@@ -58,8 +56,6 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
             _eventHubClient = eventHubClient;
             _formatter = formatter;
-            _applicationName = applicationName;
-            _eventDataAction = eventDataAction;
         }
 
         /// <summary>
@@ -119,14 +115,8 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             };
 
             eventHubData = eventHubData.AsCompressed();
-            if (!string.IsNullOrWhiteSpace(_applicationName) && !eventHubData.Properties.ContainsKey("Type"))
-            {
-                eventHubData.Properties.Add("Type", _applicationName);
-            }
 
             eventHubData.Properties.Add("LogItemId", Guid.NewGuid().ToString());
-            
-            _eventDataAction?.Invoke(eventHubData, logEvent);
             return eventHubData;
         }
 
