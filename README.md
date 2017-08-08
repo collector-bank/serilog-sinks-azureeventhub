@@ -11,7 +11,6 @@ var eventHubClient = EventHubClient.CreateFromConnectionString(eventHubConnectio
 var logger = new LoggerConfiguration()
                 .WriteTo.Sink(new AzureEventHubSink(
                     eventHubClient: eventHubClient,
-                    formatter: new JsonFormatter()
                 ...
                 .CreateLogger();
 ```
