@@ -30,9 +30,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
         /// Construct a sink that saves log events to the specified EventHubClient.
         /// </summary>
         /// <param name="eventHubClient">The EventHubClient to use in this sink.</param>
-        /// <param name="applicationName">The name of the application associated with the logs.</param>
         /// <param name="formatter">Provides formatting for outputting log data</param>
-        /// <param name="eventDataAction">An optional action for setting extra properties on each EventData.</param>
 #if NET45
         /// <param name="compressionTreshold">An optional setting to configure when to start compressing messages with gzip. Specified in bytes</param>
 #endif
