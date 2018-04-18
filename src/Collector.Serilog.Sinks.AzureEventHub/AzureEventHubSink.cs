@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
@@ -56,13 +57,13 @@ namespace Collector.Serilog.Sinks.AzureEventHub
         public void Emit(LogEvent logEvent)
         {
             byte[] body;
-            
+
             using (var render = new StringWriter())
             {
                 _formatter.Format(logEvent, render);
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
-            
+
             var eventHubData = new EventData(body)
             {
 #if NET45

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
+
 #if NET45
 using Microsoft.ServiceBus.Messaging;
 #else
@@ -86,5 +87,4 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             return typeof(EventData).GetField("bodyStream", BindingFlags.NonPublic | BindingFlags.Instance);
         }
     }
-
 }
