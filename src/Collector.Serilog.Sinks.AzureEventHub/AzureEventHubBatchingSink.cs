@@ -136,8 +136,9 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                     {
                         _eventHubClient.Send(eventData);
                     }
-#endif
+#else
                     _eventHubClient.SendAsync(eventData).Wait();
+#endif
                 }
                 catch
                 {
