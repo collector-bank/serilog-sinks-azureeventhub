@@ -8,16 +8,16 @@
     <PackageId>Collector.Serilog.Sinks.AzureEventHub</PackageId>
     <Version>3.0.0</Version>
     <Description>Serilog sink that writes to Azure Event Hub.</Description>
-    <Copyright>Copyright © 2017</Copyright>
+    <Copyright>Copyright © 2018</Copyright>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Authors>Team Heimdal</Authors>
+    <Authors>Team Nohm</Authors>
     <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
     <PackageIconUrl>http://serilog.net/images/serilog-sink-nuget.png</PackageIconUrl>
     <PackageTags>Serilog Logging Azure EventHub</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</RepositoryUrl>
     <PackageProjectUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</PackageProjectUrl>
-    <PackageReleaseNotes>Removed type and application_name from constructor. Instead of using those, use enrichers to make difference between different logging sources.</PackageReleaseNotes>
+    <PackageReleaseNotes>We removed the non-batching version of the sink because Azure Eventhub has terrible performance when logging synchronously, and logging towards it should always be performed in asynchronous batches.</PackageReleaseNotes>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Collector.Serilog.Sinks.AzureEventHub.xml</DocumentationFile>
   </PropertyGroup>
 
