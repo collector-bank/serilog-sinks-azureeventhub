@@ -34,13 +34,13 @@
     <Reference Include="System.Transactions" />
     <Reference Include="Microsoft.CSharp" />
     <PackageReference Include="WindowsAzure.ServiceBus">
-      <Version>4.1.2</Version>
+      <Version>4.1.11</Version>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard16'">
     <PackageReference Include="Microsoft.Azure.EventHubs">
-      <Version>1.0.1</Version>
+      <Version>1.0.3</Version>
     </PackageReference>
   </ItemGroup>
 
