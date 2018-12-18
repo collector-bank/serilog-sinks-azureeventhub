@@ -86,5 +86,4 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             return typeof(EventData).GetField("bodyStream", BindingFlags.NonPublic | BindingFlags.Instance);
         }
     }
-
 }

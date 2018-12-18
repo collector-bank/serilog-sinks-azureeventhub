@@ -68,9 +68,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
         private string GetSuffix(object value)
         {
-            var scalarValue = value as ScalarValue;
-
-            if (scalarValue != null)
+            if (value is ScalarValue scalarValue)
             {
                 if (scalarValue.Value != null && _suffixes.ContainsKey(scalarValue.Value.GetType()))
                     return _suffixes[scalarValue.Value.GetType()];
