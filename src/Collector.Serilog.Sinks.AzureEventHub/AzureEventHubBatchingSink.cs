@@ -3,17 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Serilog.Debugging;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.PeriodicBatching;
-
-#if NET45
-using Microsoft.ServiceBus.Messaging;
-using System.Transactions;
-#else
 using Microsoft.Azure.EventHubs;
-#endif
 
 namespace Collector.Serilog.Sinks.AzureEventHub
 {
@@ -22,9 +15,6 @@ namespace Collector.Serilog.Sinks.AzureEventHub
     /// </summary>
     public class AzureEventHubBatchingSink : PeriodicBatchingSink
     {
-        const int EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES = 256000;
-        const int EVENTHUB_HEADER_SIZE_IN_BYTES = 6000;
-
         readonly EventHubClient _eventHubClient;
         readonly ITextFormatter _formatter;
 
@@ -62,39 +52,19 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             var logEvents = events as LogEvent[] ?? events.ToArray();
             var batchedEvents = ConvertLogEventsToEventData(logEvents).ToList();
 
-#if NET45
-            var totalSizeOfAllEventsInBytes = batchedEvents.Sum(x => x.SerializedSizeInBytes);
-
-            if (totalSizeOfAllEventsInBytes > GetAllowedMessageSize(batchedEvents.Count))
-            {
-                SendBatchOneEventAtATime(logEvents);
-                return;
-            }
-#endif
             SendBatchAsOneChunk(batchedEvents);
-        }
-
-        private static int GetAllowedMessageSize(int numberOfEvents)
-        {
-            var headerSize = EVENTHUB_HEADER_SIZE_IN_BYTES * numberOfEvents;
-            return EVENTHUB_MESSAGE_SIZE_LIMIT_IN_BYTES - headerSize;
         }
 
         private IEnumerable<EventData> ConvertLogEventsToEventData(IEnumerable<LogEvent> events)
         {
-            var batchPartitionKey = Guid.NewGuid().ToString();
-
             foreach (var logEvent in events)
             {
-                yield return ConvertLogEventToEventData(logEvent, batchPartitionKey);
+                yield return ConvertLogEventToEventData(logEvent);
             }
         }
 
-        private EventData ConvertLogEventToEventData(LogEvent logEvent, string batchPartitionKey = null)
+        private EventData ConvertLogEventToEventData(LogEvent logEvent)
         {
-            if (batchPartitionKey == null)
-                batchPartitionKey = Guid.NewGuid().ToString();
-
             byte[] body;
             using (var render = new StringWriter())
             {
@@ -104,9 +74,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
             var eventHubData = new EventData(body)
             {
-#if NET45
-                PartitionKey = batchPartitionKey
-#endif
+
             };
 
             eventHubData = eventHubData.AsCompressed();
@@ -115,55 +83,9 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             return eventHubData;
         }
 
-        private void SendBatchOneEventAtATime(IEnumerable<LogEvent> events)
-        {
-            foreach (var logEvent in events)
-            {
-                var eventData = ConvertLogEventToEventData(logEvent);
-
-#if NET45
-                if (eventData.SerializedSizeInBytes > GetAllowedMessageSize(1))
-                {
-                    SelfLog.WriteLine("Message too large to send with eventhub");
-                    continue;
-                }
-#endif
-
-                try
-                {
-#if NET45
-                    using (new TransactionScope(TransactionScopeOption.Suppress))
-                    {
-                        _eventHubClient.Send(eventData);
-                    }
-#else
-                    _eventHubClient.SendAsync(eventData).Wait();
-#endif
-                }
-                catch
-                {
-                    try
-                    {
-                        Emit(logEvent);
-                    }
-                    catch
-                    {
-                        SelfLog.WriteLine("Could not Emit message");
-                    }
-                }
-            }
-        }
-
         private void SendBatchAsOneChunk(IEnumerable<EventData> batchedEvents)
         {
-#if NET45
-            using (new TransactionScope(TransactionScopeOption.Suppress))
-            {
-                _eventHubClient.SendBatch(batchedEvents);
-            }
-#else
             _eventHubClient.SendAsync(batchedEvents).Wait();
-#endif
         }
     }
 }

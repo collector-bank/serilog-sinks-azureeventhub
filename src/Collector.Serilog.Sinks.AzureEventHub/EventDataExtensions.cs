@@ -2,11 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
-#if NET45
-using Microsoft.ServiceBus.Messaging;
-#else
 using Microsoft.Azure.EventHubs;
-#endif
 
 namespace Collector.Serilog.Sinks.AzureEventHub
 {
@@ -29,9 +25,6 @@ namespace Collector.Serilog.Sinks.AzureEventHub
             }
 
             var compressedEventData = new EventData(newStream.ToArray());
-#if NET45
-            compressedEventData.PartitionKey = eventData.PartitionKey;
-#endif
 
             foreach (var eventDataProperty in eventData.Properties)
                 compressedEventData.Properties.Add(eventDataProperty);
@@ -42,11 +35,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
         private static Stream GetStream(EventData eventData)
         {
-#if NET45
-            return eventData.GetBodyStream();
-#else
             return new MemoryStream(eventData.Body.Array);
-#endif
         }
 
         public static void Decompress(this EventData eventData)
@@ -56,18 +45,17 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
             var bodyStreamMember = GetBodyStreamMember();
 
-            using (var currentStream = (Stream)bodyStreamMember.GetValue(eventData))
+            using var currentStream = (Stream)bodyStreamMember.GetValue(eventData);
+
+            var newStream = new MemoryStream();
+            using (var decompressionStream = new GZipStream(currentStream, CompressionMode.Decompress))
             {
-                var newStream = new MemoryStream();
-                using (var decompressionStream = new GZipStream(currentStream, CompressionMode.Decompress))
-                {
-                    decompressionStream.CopyTo(newStream);
-                }
-
-                newStream.Position = 0;
-
-                bodyStreamMember.SetValue(eventData, newStream);
+                decompressionStream.CopyTo(newStream);
             }
+
+            newStream.Position = 0;
+
+            bodyStreamMember.SetValue(eventData, newStream);
         }
 
         public static bool IsCompressed(this EventData eventData)
