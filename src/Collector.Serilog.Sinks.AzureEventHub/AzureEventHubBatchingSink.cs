@@ -72,10 +72,7 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                 body = Encoding.UTF8.GetBytes(render.ToString());
             }
 
-            var eventHubData = new EventData(body)
-            {
-
-            };
+            var eventHubData = new EventData(body);
 
             eventHubData = eventHubData.AsCompressed();
 
