@@ -35,8 +35,8 @@ namespace Collector.Serilog.Sinks.AzureEventHub
                                                                   [typeof(string)] = "_s",
                                                               };
 
-        public ScalarValueTypeSuffixJsonFormatter(bool omitEnclosingObject = false, string closingDelimiter = null, bool renderMessage = true, IFormatProvider formatProvider = null)
-            : base(omitEnclosingObject, closingDelimiter, renderMessage, formatProvider)
+        public ScalarValueTypeSuffixJsonFormatter(string closingDelimiter = null, bool renderMessage = true, IFormatProvider formatProvider = null)
+            : base(closingDelimiter, renderMessage, formatProvider)
         {
         }
 
