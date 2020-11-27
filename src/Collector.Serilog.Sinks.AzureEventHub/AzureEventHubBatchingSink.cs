@@ -7,6 +7,7 @@ using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Sinks.PeriodicBatching;
 using Microsoft.Azure.EventHubs;
+using System.Threading.Tasks;
 
 namespace Collector.Serilog.Sinks.AzureEventHub
 {
@@ -44,23 +45,12 @@ namespace Collector.Serilog.Sinks.AzureEventHub
         }
 
         /// <summary>
-        /// Emit a batch of log events, running to completion synchronously.
+        /// Emit a batch of log events asynchronously.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected override void EmitBatch(IEnumerable<LogEvent> events)
+        protected override Task EmitBatchAsync(IEnumerable<LogEvent> events)
         {
-            var logEvents = events as LogEvent[] ?? events.ToArray();
-            var batchedEvents = ConvertLogEventsToEventData(logEvents).ToList();
-
-            SendBatchAsOneChunk(batchedEvents);
-        }
-
-        private IEnumerable<EventData> ConvertLogEventsToEventData(IEnumerable<LogEvent> events)
-        {
-            foreach (var logEvent in events)
-            {
-                yield return ConvertLogEventToEventData(logEvent);
-            }
+            return _eventHubClient.SendAsync(events.Select(ConvertLogEventToEventData));
         }
 
         private EventData ConvertLogEventToEventData(LogEvent logEvent)
@@ -78,11 +68,6 @@ namespace Collector.Serilog.Sinks.AzureEventHub
 
             eventHubData.Properties.Add("LogItemId", Guid.NewGuid().ToString());
             return eventHubData;
-        }
-
-        private void SendBatchAsOneChunk(IEnumerable<EventData> batchedEvents)
-        {
-            _eventHubClient.SendAsync(batchedEvents).Wait();
         }
     }
 }
