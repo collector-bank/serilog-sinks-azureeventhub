@@ -2,11 +2,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <DebugType>portable</DebugType>
     <AssemblyName>Collector.Serilog.Sinks.AzureEventHub</AssemblyName>
     <PackageId>Collector.Serilog.Sinks.AzureEventHub</PackageId>
-    <Version>5.0.0</Version>
+    <Version>6.0.0</Version>
     <Description>Serilog sink that writes to Azure Event Hub.</Description>
     <Copyright>Copyright © 2018</Copyright>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -19,6 +19,7 @@
     <PackageProjectUrl>https://github.com/collector-bank/serilog-sinks-azureeventhub</PackageProjectUrl>
     <PackageReleaseNotes>We removed the non-batching version of the sink because Azure Eventhub has terrible performance when logging synchronously, and logging towards it should always be performed in asynchronous batches.</PackageReleaseNotes>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Collector.Serilog.Sinks.AzureEventHub.xml</DocumentationFile>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
